@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Photo Booth">
+  <meta name="theme-color" content="#0f0d0b">
+  <title>Photo Booth Remote</title>
+
+  <!-- PWA Manifest inline -->
+  <link rel="manifest"
+    href="data:application/json;base64,eyJuYW1lIjoiUGhvdG8gQm9vdGggUGVycGlzYWhhbiIsInNob3J0X25hbWUiOiJQaG90byBCb290aCIsInN0YXJ0X3VybCI6Ii9yZW1vdGUiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGYwZDBiIiwidGhlbWVfY29sb3IiOiIjMGYwZDBiIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjJhV1YzUW05NFBTSXdJREFnTWpBd0lESXdNQ0lnZDJsa2RHZzlJakV3TUNJZ0lHaGxhV2RvZEQwaU1UQXdJaUJuY21Wa1BUSTVNQ0lnYzNWeWNtVmtQU0pCUkNJZ2NtOXNaVDBpYzJoaGNHVWlJR1p2Ym5RdFptRnRhV3g1UFNKRVRFd2lJR1p2Ym5RdFptRnRhV3g1UFNKa2JXd2lJR1p2Ym5RdGNHRjBhRDBpTVNJZ0xtWnZiblF0Wm1GdGFXeDVQU0pFVEV3aUlITmpZV3hsS0RFeE1Td3dMakUxT1N3d0xqRTFPVHd4TWl3d0xqRTFPU0F4TWl3d0xqRTFPU0F4TWl3eE1pNHhOVGsrUEM5emRtYysifV19">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0d0b;
+      --card: #181410;
+      --border: rgba(255, 255, 255, 0.08);
+      --gold: #c9a84c;
+      --gold2: #e8c96a;
+      --cream: #f0ead8;
+      --muted: rgba(240, 234, 216, 0.35);
+      --green: #6db87a;
+      --red: #d45f5f;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      height: 100%;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+      touch-action: pan-y pinch-zoom;
+    }
+
+    /* ─── Header ─────────────────────────────── */
+    header {
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 20px;
+      color: var(--gold);
+    }
+
+    .conn-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .dot.on {
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    .dot.off {
+      background: var(--red);
+    }
+
+    /* ─── Shutter Section ────────────────────── */
+    .shutter-section {
+      flex-shrink: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Category select */
+    .category-section {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .category-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    #category-select {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--cream);
+      padding: 10px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    /* Big shutter button */
+    .shutter-btn {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: conic-gradient(from 135deg, #c9a84c, #e8c96a, #c9a84c, #9a7830, #c9a84c);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 6px rgba(201, 168, 76, 0.15), 0 8px 32px rgba(0, 0, 0, 0.5);
+      transition: transform 0.1s, box-shadow 0.1s;
+      position: relative;
+      -webkit-appearance: none;
+    }
+
+    .shutter-btn::before {
+      content: '';
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.3), transparent 60%);
+    }
+
+    .shutter-btn:active {
+      transform: scale(0.93);
+      box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.2), 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .shutter-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .shutter-icon {
+      font-size: 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Timer chips */
+    .timer-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .timer-chip {
+      padding: 7px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--cream);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif;
+      -webkit-appearance: none;
+    }
+
+    .timer-chip:active,
+    .timer-chip.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #1a1000;
+    }
+
+    .timer-row {
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px 12px;
+      border-radius: 30px;
+      border: 1px solid var(--border);
+      margin-top: 15px;
+    }
+
+    .timer-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+      -webkit-appearance: none;
+      letter-spacing: 0.5px;
+    }
+
+    .shutter-icon.counting {
+      font-family: 'Playfair Display', serif;
+      font-weight: bold;
+      font-style: italic;
+      color: #1a1000;
+      font-size: 50px;
+      text-shadow: none;
+    }
+
+    /* Countdown display */
+    #countdown-display {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      font-family: 'Playfair Display', serif;
+      font-size: 80px;
+      color: white;
+      text-shadow: 0 0 30px rgba(201, 168, 76, 0.8), 0 0 60px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      display: none;
+    }
+
+
+    /* ─── Gallery ─────────────────────────────── */
+    .gallery-header {
+      padding: 12px 20px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .gallery-title {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .gallery-count {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    #gallery {
+      padding: 8px 12px 100px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      align-content: start;
+    }
+
+    .photo-card {
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      animation: fadeUp 0.3s ease;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .photo-card img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-card-actions {
+      display: flex;
+      gap: 0;
+    }
+
+    .photo-action-btn {
+      flex: 1;
+      padding: 9px 6px;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: opacity 0.15s;
+      -webkit-appearance: none;
+    }
+
+    .photo-action-btn:active {
+      opacity: 0.7;
+    }
+
+    .photo-info {
+      padding: 6px 10px;
+      font-size: 10px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .dl-btn {
+      background: var(--gold);
+      color: #1a1000;
+    }
+
+    .drive-btn {
+      background: #4a7bc8;
+      color: white;
+    }
+
+    .del-btn {
+      background: var(--red);
+      color: white;
+    }
+
+    .uploading-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--gold);
+      font-size: 10px;
+      padding: 3px 7px;
+      border-radius: 10px;
+      backdrop-filter: blur(4px);
+    }
+
+    .uploaded-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(109, 184, 122, 0.9);
+      color: white;
+      font-size: 10px;
+      padding: 3px 7px;
+      border-radius: 10px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .empty-icon {
+      font-size: 40px;
+      display: block;
+      margin-bottom: 10px;
+      opacity: 0.5;
+    }
+
+    /* ─── Toast ───────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: calc(20px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: rgba(15, 13, 11, 0.96);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      color: var(--cream);
+      padding: 10px 22px;
+      border-radius: 50px;
+      font-size: 13px;
+      z-index: 999;
+      transition: transform 0.25s ease;
+      backdrop-filter: blur(10px);
+      white-space: nowrap;
+      max-width: 90vw;
+      text-align: center;
+    }
+
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ─── Install banner ──────────────────────── */
+    #install-banner {
+      display: none;
+      background: rgba(201, 168, 76, 0.1);
+      border-top: 1px solid rgba(201, 168, 76, 0.2);
+      padding: 10px 16px;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    #install-banner.show {
+      display: flex;
+    }
+
+    .install-text {
+      font-size: 12px;
+      color: var(--cream);
+    }
+
+    .install-btn {
+      background: var(--gold);
+      color: #1a1000;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .dismiss-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">Photo Booth</div>
+    <div class="conn-badge">
+      <div class="dot" id="conn-dot" style="background:var(--red)"></div>
+      <span id="conn-text">Menghubungkan...</span>
+    </div>
+  </header>
+
+  <!-- Category Selection -->
+  <div class="category-section">
+    <label class="category-label">📂 Pilih Kelas / Kategori</label>
+    <select id="category-select" onchange="updateCategory()">
+      <option value="Umum">Umum</option>
+      <option value="RPL A">RPL A</option>
+      <option value="RPL B">RPL B</option>
+      <option value="RPL C">RPL C</option>
+      <option value="TOI A">TOI A</option>
+      <option value="TOI B">TOI B</option>
+      <option value="TPTU A">TPTU A</option>
+      <option value="TPTU B">TPTU B</option>
+      <option value="Lainnya">Lainnya...</option>
+    </select>
+  </div>
+
+  <!-- Shutter -->
+  <div class="shutter-section" style="position: relative;">
+    <div id="countdown-display"></div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
+      <button class="shutter-btn" id="shutter-btn" onclick="triggerShutter()" disabled>
+        <span class="shutter-icon" id="shutter-icon">📸</span>
+      </button>
+      <div class="timer-row">
+        <button class="timer-chip active" onclick="setTimer(0,this)">OFF</button>
+        <button class="timer-chip" onclick="setTimer(3,this)">3S</button>
+        <button class="timer-chip" onclick="setTimer(5,this)">5S</button>
+        <button class="timer-chip" onclick="setTimer(10,this)">10S</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <div class="gallery-header">
+    <div class="gallery-title">✦ Galeri Foto</div>
+    <div class="gallery-count" id="gallery-count">0 foto</div>
+  </div>
+
+  <div id="gallery">
+    <div class="empty-state">
+      <span class="empty-icon">📷</span>
+      Belum ada foto.<br>Tekan tombol untuk mengambil foto!
+    </div>
+  </div>
+
+  <!-- PWA Install Banner -->
+  <div id="install-banner">
+    <div class="install-text">📲 Install app ini ke homescreen!</div>
+    <button class="install-btn" onclick="installPWA()">Install</button>
+    <button class="dismiss-btn" onclick="dismissInstall()">✕</button>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────────────
+    let ws = null;
+    let timerSeconds = 0;
+    let photos = []; // { id, filename, category, uploadedToDrive }
+    let photoData = {}; // cache dataUrl per id
+    let countdownInterval = null;
+    let isTriggering = false;
+    let deferredPrompt = null;
+    let currentCategory = document.getElementById('category-select').value;
+
+    function updateCategory() {
+      let cat = document.getElementById('category-select').value;
+      if (cat === 'Lainnya') {
+        const custom = prompt('Masukkan nama kategori/kelas:');
+        if (custom) {
+          cat = custom;
+        } else {
+          document.getElementById('category-select').value = currentCategory || 'Umum';
+          return;
+        }
+      }
+      
+      if (currentCategory === cat) return;
+      currentCategory = cat;
+      
+      const sel = document.getElementById('category-select');
+      if (!Array.from(sel.options).some(o => o.value === cat)) {
+         const opt = document.createElement('option');
+         opt.value = cat;
+         opt.textContent = cat;
+         sel.insertBefore(opt, sel.lastElementChild);
+      }
+      sel.value = cat;
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'set_category', category: currentCategory }));
+      loadPhotosForCategory(currentCategory);
+      }
+      showToast(`📂 Kategori: ${currentCategory}`);
+    }
+
+    // ── WebSocket ──────────────────────────────────────────────────
+    function connect() {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${proto}//${location.host}`);
+
+      ws.onopen = () => {
+        setConn(true);
+        document.getElementById('shutter-btn').disabled = false;
+        showToast('✅ Terhubung ke laptop!');
+        // Send initial category
+        ws.send(JSON.stringify({ type: 'set_category', category: currentCategory }));
+      };
+
+      ws.onmessage = async (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'init') {
+          // Simpan semua foto, filter by kategori aktif
+          photos = (msg.photos || []).filter(p => !p.category || p.category === currentCategory);
+          renderGallery();
+        }
+        if (msg.type === 'new_photo') {
+          if (!msg.category || msg.category === currentCategory) {
+            photos.unshift({ id: msg.id, filename: msg.filename, category: msg.category, uploadedToDrive: false });
+            renderGallery();
+          }
+          showToast('📸 Foto baru tersimpan!');
+          // Vibrate
+          if (navigator.vibrate) navigator.vibrate([80, 30, 80]);
+        }
+        if (msg.type === 'photo_uploaded') {
+          const p = photos.find(x => x.id == msg.id);
+          if (p) { p.uploadedToDrive = true; renderGallery(); }
+          showToast('☁️ Foto tersimpan di Drive!');
+        }
+        if (msg.type === 'trigger') {
+          // Laptop confirmed trigger — show countdown on tablet too
+          if (msg.timer > 0) showCountdown(msg.timer);
+        }
+        if (msg.type === 'set_category') {
+          if (currentCategory === msg.category) return; // Prevent duplicate loop
+          
+          currentCategory = msg.category;
+          const sel = document.getElementById('category-select');
+          if (sel) {
+            if (!Array.from(sel.options).some(o => o.value === msg.category)) {
+               const opt = document.createElement('option');
+               opt.value = msg.category;
+               opt.textContent = msg.category;
+               sel.insertBefore(opt, sel.lastElementChild);
+            }
+            sel.value = msg.category;
+          }
+          showToast(`📂 Kategori: ${msg.category}`);
+        }
+        if (msg.type === 'photo_deleted') {
+          photos = photos.filter(x => x.id != msg.id);
+          renderGallery();
+          showToast('🗑️ Foto telah dihapus');
+        }
+      };
+
+      ws.onclose = () => {
+        setConn(false);
+        document.getElementById('shutter-btn').disabled = true;
+        setTimeout(connect, 2000);
+      };
+
+      ws.onerror = () => setConn(false);
+    }
+
+    connect();
+
+    // ── Shutter ─────────────────────────────────────────────────────
+    function triggerShutter() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) { showToast('❌ Tidak terhubung ke laptop!'); return; }
+      if (isTriggering) return;
+      isTriggering = true;
+      if (navigator.vibrate) navigator.vibrate(60);
+      ws.send(JSON.stringify({ type: 'trigger', timer: timerSeconds }));
+      if (timerSeconds > 0) showCountdown(timerSeconds);
+      showToast(timerSeconds > 0 ? `⏱️ ${timerSeconds} detik...` : '📸 Mengambil foto...');
+      setTimeout(() => { isTriggering = false; }, timerSeconds > 0 ? (timerSeconds + 1) * 1000 : 1500);
+    }
+
+    function showCountdown(secs) {
+      const el = document.getElementById('countdown-display');
+      const icon = document.getElementById('shutter-icon');
+      const originalIcon = '📸';
+      let n = secs;
+
+      el.classList.add('show');
+      el.textContent = n;
+
+      icon.textContent = n;
+      icon.classList.add('counting');
+
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        n--;
+        if (n <= 0) {
+          clearInterval(countdownInterval);
+          el.classList.remove('show');
+          icon.textContent = originalIcon;
+          icon.classList.remove('counting');
+          return;
+        }
+        el.textContent = n;
+        icon.textContent = n;
+
+        el.classList.remove('show');
+        void el.offsetWidth;
+        el.classList.add('show');
+      }, 1000);
+    }
+
+    // ── Timer ────────────────────────────────────────────────────────
+    function setTimer(sec, el) {
+      timerSeconds = sec;
+      document.querySelectorAll('.timer-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // ── Gallery ──────────────────────────────────────────────────────
+    async function loadPhotosForCategory(cat) {
+      try {
+        const res = await fetch(`/api/photos?category=${encodeURIComponent(cat)}`);
+        const data = await res.json();
+        photos = data;
+        renderGallery();
+      } catch(e) { console.error('Failed to load photos:', e); }
+    }
+
+    function renderGallery() {
+      const gallery = document.getElementById('gallery');
+      document.getElementById('gallery-count').textContent = `${photos.length} foto`;
+
+      if (photos.length === 0) {
+        gallery.innerHTML = `<div class="empty-state"><span class="empty-icon">📷</span>Belum ada foto.<br>Tekan tombol untuk mengambil foto!</div>`;
+        return;
+      }
+
+      gallery.innerHTML = photos.map(p => `
+    <div class="photo-card" id="card-${p.id}">
+      <img src="/api/photo/${p.id}/preview" alt="${p.filename}"
+        onerror="this.style.display='none'"
+        onload="this.style.display='block'"
+        loading="lazy">
+      <div class="photo-info">${p.filename.replace('.jpg', '')}</div>
+      <div class="photo-card-actions">
+        <button class="photo-action-btn dl-btn" onclick="downloadPhoto(${p.id}, '${p.filename}')">⬇️</button>
+        <button class="photo-action-btn del-btn" onclick="deletePhoto(${p.id})">🗑️</button>
+      </div>
+      ${p.uploadedToDrive
+          ? `<div class="uploaded-badge">☁️ Drive</div>`
+          : `<div class="uploading-badge">⏳ Drive</div>`
+        }
+    </div>
+  `).join('');
+
+      // Load thumbnails
+      photos.forEach(p => loadThumb(p.id));
+    }
+
+    async function loadThumb(id) {
+      if (photoData[id]) return;
+      try {
+        const res = await fetch(`/api/photo/${id}/thumb`);
+        const data = await res.json();
+        if (data.dataUrl) {
+          photoData[id] = data.dataUrl;
+          const img = document.querySelector(`#card-${id} img`);
+          if (img) { img.src = data.dataUrl; img.style.display = 'block'; }
+        }
+      } catch (e) { }
+    }
+
+    // ── Download ─────────────────────────────────────────────────────
+    async function downloadPhoto(id, filename) {
+      showToast('⬇️ Mengunduh...');
+      try {
+        // Try from cache first
+        if (photoData[id]) {
+          const a = document.createElement('a');
+          a.href = photoData[id];
+          a.download = filename;
+          a.click();
+        } else {
+          // Direct download via server
+          const a = document.createElement('a');
+          a.href = `/api/photo/${id}`;
+          a.download = filename;
+          a.click();
+        }
+        if (navigator.vibrate) navigator.vibrate(40);
+      } catch (e) {
+        showToast('❌ Gagal unduh: ' + e.message);
+      }
+    }
+
+    // ── Delete ───────────────────────────────────────────────────────
+    async function deletePhoto(id) {
+      if (!confirm('Hapus foto ini?')) return;
+      try {
+        const res = await fetch(`/api/photo/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          if (navigator.vibrate) navigator.vibrate(60);
+        } else {
+          showToast('❌ Gagal menghapus foto');
+        }
+      } catch (e) {
+        showToast('❌ Error: ' + e.message);
+      }
+    }
+
+    // ── PWA Install ──────────────────────────────────────────────────
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (!localStorage.getItem('pwa_dismissed')) {
+        document.getElementById('install-banner').classList.add('show');
+      }
+    });
+
+    function installPWA() {
+      if (!deferredPrompt) {
+        showToast('📲 Gunakan "Add to Home Screen" di browser');
+        return;
+      }
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        document.getElementById('install-banner').classList.remove('show');
+      });
+    }
+
+    function dismissInstall() {
+      document.getElementById('install-banner').classList.remove('show');
+      localStorage.setItem('pwa_dismissed', '1');
+    }
+
+    // iOS install hint
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    if (isIOS && !isStandalone && !localStorage.getItem('pwa_dismissed')) {
+      document.getElementById('install-banner').classList.add('show');
+      document.querySelector('.install-text').textContent = '📲 Tap Share → "Add to Home Screen"';
+      document.querySelector('.install-btn').style.display = 'none';
+    }
+
+    // ── Utils ─────────────────────────────────────────────────────────
+    function setConn(on) {
+      const dot = document.getElementById('conn-dot');
+      const text = document.getElementById('conn-text');
+      dot.className = 'dot ' + (on ? 'on' : 'off');
+      text.textContent = on ? 'Terhubung' : 'Menghubungkan...';
+    }
+
+    let toastT;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastT);
+      toastT = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+
+</html>

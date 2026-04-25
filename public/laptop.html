@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Booth — Laptop View</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0d0b;
+      --panel: #181410;
+      --border: rgba(255, 255, 255, 0.07);
+      --gold: #c9a84c;
+      --gold2: #e8c96a;
+      --cream: #f0ead8;
+      --muted: rgba(240, 234, 216, 0.4);
+      --green: #6db87a;
+      --red: #d45f5f;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      overflow: hidden;
+    }
+
+    body {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      grid-template-rows: 48px 1fr;
+      grid-template-areas:
+        "header header"
+        "camera sidebar";
+      gap: 0;
+    }
+
+    body.console-open {
+      grid-template-rows: 48px 1fr 180px;
+      grid-template-areas:
+        "header header"
+        "camera sidebar"
+        "console console";
+    }
+
+    /* Topbar */
+    header {
+      grid-area: header;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+      overflow: visible;
+      z-index: 50;
+    }
+
+    .camera-area {
+      grid-area: camera;
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+    }
+
+    header .logo {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 18px;
+      color: var(--gold);
+      letter-spacing: 0.5px;
+    }
+
+    header .sep {
+      flex: 1;
+    }
+
+    /* Gear wrapper */
+    .gear-wrapper {
+      position: relative;
+    }
+
+    /* Gear button */
+    .gear-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--cream);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .gear-btn:hover,
+    .console-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--gold);
+    }
+
+    .gear-btn.active {
+      background: rgba(201, 168, 76, 0.15);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .gear-btn .gear-icon {
+      transition: transform 0.4s ease;
+    }
+
+    .gear-btn.active .gear-icon {
+      transform: rotate(90deg);
+    }
+
+    /* Console toggle button */
+    .console-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--cream);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-family: 'DM Mono', monospace;
+      font-weight: bold;
+    }
+
+    .console-btn.active {
+      background: rgba(201, 168, 76, 0.15);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* Bottom console panel */
+    .console-panel {
+      grid-area: console;
+      display: none;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    body.console-open .console-panel {
+      display: flex;
+    }
+
+    .console-header {
+      display: flex;
+      align-items: center;
+      padding: 8px 16px;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .console-header .console-count {
+      margin-left: auto;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--muted);
+    }
+
+    .console-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .console-log::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .console-log::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Settings dropdown */
+    .settings-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 320px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(201, 168, 76, 0.08);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px);
+      transition: all 0.25s ease;
+    }
+
+    .settings-dropdown.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .settings-dropdown .sidebar-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .settings-dropdown .dropdown-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 12px 0;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .dot.green {
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    .dot.red {
+      background: var(--red);
+    }
+
+    .dot.yellow {
+      background: var(--gold);
+    }
+
+    /* Main camera area */
+    .camera-area {
+      position: relative;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: auto;
+      height: 100%;
+      max-width: 100%;
+      aspect-ratio: 4 / 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      container-type: size;
+    }
+
+    #video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    #canvas {
+      display: none;
+    }
+
+    /* Countdown overlay */
+    #countdown {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 120px;
+      color: white;
+      text-shadow: 0 0 60px rgba(201, 168, 76, 0.9), 0 0 120px rgba(201, 168, 76, 0.4);
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    #countdown.show {
+      display: flex;
+      animation: countPop 0.8s ease-out;
+    }
+
+    @keyframes countPop {
+      0% {
+        transform: scale(2);
+        opacity: 0;
+      }
+
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      80% {
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(0.7);
+        opacity: 0;
+      }
+    }
+
+    /* Flash */
+    #flash {
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 30;
+      transition: opacity 0.08s;
+    }
+
+    /* Frame overlay */
+    .frame-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Corner guides */
+    .guide {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-color: rgba(201, 168, 76, 0.6);
+      border-style: solid;
+    }
+
+    .guide.tl {
+      top: 16px;
+      left: 16px;
+      border-width: 2px 0 0 2px;
+    }
+
+    .guide.tr {
+      top: 16px;
+      right: 16px;
+      border-width: 2px 2px 0 0;
+    }
+
+    .guide.bl {
+      bottom: 16px;
+      left: 16px;
+      border-width: 0 0 2px 2px;
+    }
+
+    .guide.br {
+      bottom: 16px;
+      right: 16px;
+      border-width: 0 2px 2px 0;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .sidebar-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Camera select */
+    select {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--cream);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    select option {
+      background: #181410;
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .btn:last-child {
+      margin-bottom: 0;
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #1a1000;
+    }
+
+    .btn-gold:hover {
+      background: var(--gold2);
+      transform: translateY(-1px);
+    }
+
+    .btn-gold:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--cream);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Frame options */
+    .frame-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+    }
+
+    .frame-opt {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .frame-opt:hover,
+    .frame-opt.active {
+      border-color: var(--gold);
+      background: rgba(201, 168, 76, 0.15);
+    }
+
+    /* Auth */
+    .auth-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--cream);
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      margin-bottom: 6px;
+    }
+
+    .auth-input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    .auth-input::placeholder {
+      color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Folder name */
+    .folder-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--cream);
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .folder-input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    /* Remote info */
+    .remote-url {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      background: rgba(201, 168, 76, 0.1);
+      border: 1px solid rgba(201, 168, 76, 0.2);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: var(--gold);
+      word-break: break-all;
+      margin-bottom: 8px;
+    }
+
+    /* Photo counter */
+    .photo-count {
+      font-family: 'DM Mono', monospace;
+      font-size: 28px;
+      color: var(--gold);
+      font-weight: 300;
+      line-height: 1;
+    }
+
+    .photo-count span {
+      font-size: 11px;
+      color: var(--muted);
+      display: block;
+      margin-top: 2px;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* Log */
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    #log::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    #log::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .log-entry {
+      margin-bottom: 2px;
+    }
+
+    .log-entry.ok {
+      color: var(--green);
+    }
+
+    .log-entry.err {
+      color: var(--red);
+    }
+
+    .log-entry.info {
+      color: var(--gold);
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: rgba(15, 13, 11, 0.95);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      color: var(--cream);
+      padding: 10px 22px;
+      border-radius: 50px;
+      font-size: 12px;
+      z-index: 999;
+      transition: transform 0.25s ease;
+      backdrop-filter: blur(10px);
+      white-space: nowrap;
+    }
+
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* HUD Editor Overlay */
+    .hud-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 13, 11, 0.98);
+      z-index: 2000;
+      display: none;
+      flex-direction: row;
+    }
+    .hud-overlay.show { display: flex; }
+    
+    .hud-sidebar {
+      width: 320px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+    
+    .hud-title {
+      font-size: 18px; color: var(--gold); font-family: 'Playfair Display', serif; font-style: italic;
+    }
+    
+    .hud-section {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 12px;
+    }
+
+    .hud-section label {
+      display: block; font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px;
+    }
+    
+    .hud-input {
+      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--cream);
+      padding: 8px 10px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; margin-bottom: 8px;
+    }
+    .hud-input:focus { outline: none; border-color: var(--gold); }
+    
+    .emoji-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    }
+    .emoji-grid span {
+      background: rgba(255,255,255,0.04); padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 20px;
+      border: 1px solid transparent; transition: all 0.2s;
+    }
+    .emoji-grid span:hover { border-color: var(--gold); background: rgba(201,168,76,0.1); transform: scale(1.1); }
+    
+    .hud-preview-area {
+      flex: 1; padding: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .hud-preview-box {
+      width: auto; height: 100%; aspect-ratio: 4/3; max-width: 100%; max-height: 100%;
+      background: #000; border: 2px dashed rgba(201,168,76,0.5); position: relative; overflow: hidden;
+      container-type: size;
+    }
+    
+    .hud-element {
+      position: absolute; cursor: move; user-select: none; white-space: nowrap;
+      transform: translate(-50%, -50%);
+      padding: 10px; border: 1px solid transparent;
+    }
+    .hud-element:hover { border-color: rgba(255,255,255,0.3); border-style: dashed; }
+    .hud-element .del-btn {
+      position: absolute; top: 0px; right: 0px; background: var(--red); color: white;
+      border-radius: 50%; width: 22px; height: 22px; font-size: 10px; display: none; align-items: center; justify-content: center; cursor: pointer; transform: translate(50%, -50%);
+    }
+    .hud-element:hover .del-btn { display: flex; }
+    .hud-element .resize-btn {
+      position: absolute; bottom: 0px; right: 0px; background: var(--gold); color: #000;
+      border-radius: 50%; width: 22px; height: 22px; font-size: 10px; display: none; align-items: center; justify-content: center; cursor: se-resize; transform: translate(50%, 50%);
+    }
+    .hud-element:hover .resize-btn { display: flex; }
+
+    .btn-row { display: flex; gap: 8px; margin-top: 16px; }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">Photo Booth</div>
+    <div class="sep"></div>
+    <div class="status-pill">
+      <div class="dot" id="cam-dot" style="background:var(--red)"></div><span id="cam-status">Kamera off</span>
+    </div>
+    <div class="status-pill">
+      <div class="dot" id="ws-dot" style="background:var(--red)"></div><span id="ws-status">Menghubungkan...</span>
+    </div>
+    <div class="status-pill">
+      <div class="dot" id="drive-dot" style="background:var(--red)"></div><span id="drive-status">Drive: belum
+        login</span>
+    </div>
+    <button class="console-btn" id="console-btn" onclick="toggleConsole()" title="Console">
+      >_
+    </button>
+    <div class="gear-wrapper">
+      <button class="gear-btn" id="gear-btn" onclick="toggleSettings()" title="Pengaturan">
+        <span class="gear-icon">⚙️</span>
+      </button>
+      <div class="settings-dropdown" id="settings-dropdown">
+        <div class="sidebar-label">☁️ Google Drive</div>
+        <input id="client-id" class="auth-input" placeholder="OAuth Client ID" oninput="saveConfig()">
+        <input id="folder-name" class="folder-input" placeholder="Nama folder Drive" value="Photo Booth Perpisahan"
+          oninput="saveConfig()">
+        <button class="btn btn-ghost" onclick="handleAuth()" id="auth-btn">🔑 Login Google</button>
+        <div id="user-row" style="display:none;font-size:11px;color:var(--green);margin-top:6px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="dot green"></div><span id="user-name">Terhubung</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="camera-area">
+    <div class="video-wrapper">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="canvas"></canvas>
+      <div id="countdown"></div>
+      <div id="flash"></div>
+
+      <div class="guide tl"></div>
+      <div class="guide tr"></div>
+      <div class="guide bl"></div>
+      <div class="guide br"></div>
+
+      <!-- Frame SVGs -->
+      <svg class="frame-overlay" id="frame-gold" style="display:none" viewBox="0 0 800 600"
+      xmlns="http://www.w3.org/2000/svg">
+      <rect x="12" y="12" width="776" height="576" fill="none" stroke="#c9a84c" stroke-width="6" rx="4" />
+      <rect x="22" y="22" width="756" height="556" fill="none" stroke="#c9a84c" stroke-width="1" rx="2"
+        stroke-dasharray="10,6" />
+      <text x="400" y="590" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#c9a84c">✦ KENANGAN
+        TERINDAH ✦</text>
+    </svg>
+    <svg class="frame-overlay" id="frame-floral" style="display:none" viewBox="0 0 800 600"
+      xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="8" width="784" height="584" fill="none" stroke="#d4a5a5" stroke-width="4" rx="8" />
+      <text x="20" y="42" font-size="36">🌸</text><text x="730" y="42" font-size="36">🌸</text>
+      <text x="20" y="592" font-size="36">🌿</text><text x="730" y="592" font-size="36">🌿</text>
+    </svg>
+    <svg class="frame-overlay" id="frame-polaroid" style="display:none" viewBox="0 0 800 600"
+      xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="800" height="600" fill="rgba(255,255,255,0.1)" />
+      <rect x="20" y="20" width="760" height="530" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1" />
+      <text x="400" y="585" text-anchor="middle" font-family="Georgia,serif" font-size="16" fill="white"
+        font-style="italic">— selamat jalan —</text>
+    </svg>
+      <svg class="frame-overlay" id="frame-vintage" style="display:none" viewBox="0 0 800 600"
+        xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="800" height="600" fill="rgba(107,76,42,0.2)" />
+        <rect x="6" y="6" width="788" height="588" fill="none" stroke="#6b4c2a" stroke-width="12" />
+        <rect x="18" y="18" width="764" height="564" fill="none" stroke="#c9a84c" stroke-width="2" />
+      </svg>
+      <div class="frame-overlay" id="frame-custom" style="display:none">
+        <!-- Dynamic HUD elements rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <!-- Category -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">📂 Kategori / Kelas</div>
+      <select id="laptop-category-select" onchange="updateLaptopCategory()">
+        <option value="Umum">Umum</option>
+        <option value="RPL A">RPL A</option>
+        <option value="RPL B">RPL B</option>
+        <option value="RPL C">RPL C</option>
+        <option value="TOI A">TOI A</option>
+        <option value="TOI B">TOI B</option>
+        <option value="TPTU A">TPTU A</option>
+        <option value="TPTU B">TPTU B</option>
+        <option value="Lainnya">Lainnya...</option>
+      </select>
+    </div>
+
+    <!-- Camera -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">📷 Kamera</div>
+      <select id="cam-select">
+        <option value="">— Pilih Kamera —</option>
+      </select>
+      <button class="btn btn-ghost" onclick="refreshCameras()">🔄 Refresh Kamera</button>
+      <button class="btn btn-gold" onclick="startCamera()" id="start-btn">▶ Mulai Kamera</button>
+    </div>
+
+    <!-- Capture -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">⚡ Ambil Foto</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <button class="btn btn-ghost" style="flex:1;font-size:11px" onclick="setTimer(0,this)" id="t0">Off</button>
+        <button class="btn btn-ghost" style="flex:1;font-size:11px" onclick="setTimer(3,this)" id="t3">3s</button>
+        <button class="btn btn-ghost" style="flex:1;font-size:11px" onclick="setTimer(5,this)" id="t5">5s</button>
+        <button class="btn btn-ghost" style="flex:1;font-size:11px" onclick="setTimer(10,this)" id="t10">10s</button>
+      </div>
+      <button class="btn btn-gold" onclick="capturePhoto()" id="capture-btn" disabled>📸 Ambil Foto</button>
+    </div>
+
+    <!-- Frame -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">🖼️ Frame</div>
+      <div class="frame-grid">
+        <div class="frame-opt active" onclick="setFrame('none',this)" title="Tanpa Frame">🚫</div>
+        <div class="frame-opt" onclick="setFrame('gold',this)" title="Gold">✨</div>
+        <div class="frame-opt" onclick="setFrame('floral',this)" title="Floral">🌸</div>
+        <div class="frame-opt" onclick="setFrame('polaroid',this)" title="Polaroid">🎞️</div>
+        <div class="frame-opt" onclick="setFrame('vintage',this)" title="Vintage">🟤</div>
+        <div class="frame-opt" onclick="setFrame('custom',this)" title="Custom">✏️</div>
+      </div>
+      <button class="btn btn-ghost" id="edit-custom-btn" style="margin-top:8px; display:none; border-color:var(--gold); color:var(--gold)" onclick="openCustomFrameModal()">⚙️ Edit Frame Custom</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="sidebar-section" style="border-bottom:none">
+      <div class="photo-count" id="photo-count">0<span>foto diambil</span></div>
+    </div>
+  </div>
+
+  <div class="console-panel" id="console-panel">
+    <div class="console-header">
+      >_ Console
+      <span class="console-count" id="console-count">0 entries</span>
+    </div>
+    <div class="console-log" id="log"></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- HUD Editor -->
+  <div class="hud-overlay" id="hud-editor">
+    <div class="hud-sidebar">
+      <div class="hud-title">🛠️ HUD Editor</div>
+      
+      <div class="hud-section">
+        <label>➕ Tambah Teks</label>
+        <input type="text" id="hud-text-input" class="hud-input" placeholder="Ketik teks...">
+        <div style="display:flex;gap:6px;">
+          <input type="color" id="hud-text-color" value="#ffffff" style="width:40px; height:36px; padding:0; border:none; background:none; cursor:pointer;">
+          <button class="btn btn-gold" onclick="addHudText()" style="flex:1;">Tambah Teks</button>
+        </div>
+      </div>
+      
+      <div class="hud-section">
+        <label>➕ Tambah Stiker / Emoji</label>
+        <div class="emoji-grid">
+          <span onclick="addHudSticker('⭐')">⭐</span>
+          <span onclick="addHudSticker('✨')">✨</span>
+          <span onclick="addHudSticker('🌸')">🌸</span>
+          <span onclick="addHudSticker('🌿')">🌿</span>
+          <span onclick="addHudSticker('🎓')">🎓</span>
+          <span onclick="addHudSticker('🎉')">🎉</span>
+          <span onclick="addHudSticker('❤️')">❤️</span>
+          <span onclick="addHudSticker('🔥')">🔥</span>
+        </div>
+      </div>
+
+      <div class="hud-section" style="margin-top:auto">
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="clearHudElements()">Bersihkan</button>
+          <button class="btn btn-gold" onclick="closeHudEditor()">Selesai</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="hud-preview-area">
+      <div class="hud-preview-box" id="hud-preview-box">
+        <!-- Draggable elements go here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Config ──────────────────────────────────────────────────────
+    let config = JSON.parse(localStorage.getItem('photobooth_config') || '{}');
+    let accessToken = null;
+    let tokenClient = null;
+    let currentFrame = 'none';
+    let timerSeconds = 0;
+    let stream = null;
+    let photoCount = 0;
+    let ws = null;
+
+    // Restore config
+    if (config.clientId) document.getElementById('client-id').value = config.clientId;
+    if (config.folderName) document.getElementById('folder-name').value = config.folderName;
+
+    function saveConfig() {
+      config.clientId = document.getElementById('client-id').value.trim();
+      config.folderName = document.getElementById('folder-name').value.trim();
+      localStorage.setItem('photobooth_config', JSON.stringify(config));
+    }
+
+    // ── WebSocket ───────────────────────────────────────────────────
+    function connectWS() {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${proto}//${location.host}`);
+
+      ws.onopen = () => {
+        setStatus('ws', 'green', 'Terhubung');
+        log('WebSocket terhubung', 'ok');
+      };
+
+      ws.onmessage = (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'init') {
+          const savedInstance = sessionStorage.getItem('serverInstanceId');
+          if (savedInstance !== msg.serverInstanceId) {
+            sessionStorage.removeItem('google_access_token');
+            sessionStorage.setItem('serverInstanceId', msg.serverInstanceId);
+          } else {
+            const savedToken = sessionStorage.getItem('google_access_token');
+            if (savedToken && !accessToken) {
+              accessToken = savedToken;
+              restoreGoogleSession();
+            }
+          }
+        }
+        if (msg.type === 'trigger') {
+          log(`📱 Trigger dari tablet (timer: ${msg.timer}s)`, 'info');
+          capturePhoto(msg.timer);
+        }
+        if (msg.type === 'set_category') {
+          if (config.currentCategory === msg.category) return; // Prevent duplicate loop
+          
+          config.currentCategory = msg.category;
+          const sel = document.getElementById('laptop-category-select');
+          if (sel) {
+            if (!Array.from(sel.options).some(o => o.value === msg.category)) {
+               const opt = document.createElement('option');
+               opt.value = msg.category;
+               opt.textContent = msg.category;
+               sel.insertBefore(opt, sel.lastElementChild);
+            }
+            sel.value = msg.category;
+          }
+          saveConfig();
+          log(`📱 Kategori diubah dari remote: ${msg.category}`, 'info');
+          showToast(`📂 Kategori: ${msg.category}`);
+          syncCounter();
+        }
+      };
+
+      ws.onclose = () => {
+        setStatus('ws', 'red', 'Terputus');
+        setTimeout(connectWS, 2000);
+      };
+
+      ws.onerror = () => setStatus('ws', 'red', 'Error WS');
+    }
+
+    connectWS();
+
+    // ── Camera ──────────────────────────────────────────────────────
+    async function refreshCameras() {
+      // Request permission first
+      try { await navigator.mediaDevices.getUserMedia({ video: true }); } catch (e) { }
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter(d => d.kind === 'videoinput');
+      const sel = document.getElementById('cam-select');
+      sel.innerHTML = '<option value="">— Pilih Kamera —</option>';
+      cams.forEach((c, i) => {
+        const opt = document.createElement('option');
+        opt.value = c.deviceId;
+        opt.textContent = c.label || `Kamera ${i + 1}`;
+        // Auto-select Sony
+        if (c.label.toLowerCase().includes('sony')) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      log(`${cams.length} kamera ditemukan`, 'ok');
+      showToast(`${cams.length} kamera ditemukan`);
+    }
+
+    async function startCamera() {
+      const deviceId = document.getElementById('cam-select').value;
+      const constraints = {
+        video: deviceId ? { deviceId: { exact: deviceId }, width: { ideal: 1600 }, height: { ideal: 1200 } }
+          : { width: { ideal: 1600 }, height: { ideal: 1200 } },
+        audio: false
+      };
+
+      try {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        document.getElementById('video').srcObject = stream;
+        document.getElementById('capture-btn').disabled = false;
+        document.getElementById('start-btn').textContent = '🟢 Kamera Aktif';
+        setStatus('cam', 'green', 'Kamera aktif');
+        log('Kamera started: ' + (stream.getVideoTracks()[0]?.label || 'unknown'), 'ok');
+        showToast('📷 Kamera siap!');
+        await refreshCameras();
+
+      } catch (e) {
+        setStatus('cam', 'red', 'Kamera error');
+        log('Error kamera: ' + e.message, 'err');
+        showToast('❌ ' + e.message);
+      }
+    }
+
+
+    refreshCameras();
+
+    // ── Timer ───────────────────────────────────────────────────────
+    function setTimer(sec, el) {
+      timerSeconds = sec;
+      ['t0', 't3', 't5', 't10'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) { b.classList.remove('btn-gold'); b.classList.add('btn-ghost'); }
+      });
+      el.classList.remove('btn-ghost'); el.classList.add('btn-gold');
+    }
+
+    document.getElementById('t0').classList.add('btn-gold');
+    document.getElementById('t0').classList.remove('btn-ghost');
+
+    // ── Frame & HUD ──────────────────────────────────────────────────
+    let hudElements = [];
+    let draggingElement = null;
+
+    function setFrame(name, el) {
+      currentFrame = name;
+      document.querySelectorAll('.frame-opt').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      ['gold', 'floral', 'polaroid', 'vintage', 'custom'].forEach(f => {
+        const fel = document.getElementById('frame-' + f);
+        if (fel) fel.style.display = (f === name) ? 'block' : 'none';
+      });
+      
+      const editBtn = document.getElementById('edit-custom-btn');
+      if (editBtn) editBtn.style.display = (name === 'custom') ? 'flex' : 'none';
+      if (name === 'custom') updateLiveHud();
+    }
+
+    function openCustomFrameModal() {
+      document.getElementById('hud-editor').classList.add('show');
+      renderHudEditor();
+    }
+
+    function closeHudEditor() {
+      document.getElementById('hud-editor').classList.remove('show');
+      updateLiveHud();
+    }
+
+    function addHudText() {
+      const txt = document.getElementById('hud-text-input').value.trim() || 'Teks Baru';
+      const col = document.getElementById('hud-text-color').value;
+      hudElements.push({ id: Date.now(), type: 'text', content: txt, color: col, x: 0.5, y: 0.5, sizeRatio: 0.08 });
+      renderHudEditor();
+    }
+
+    function addHudSticker(emoji) {
+      hudElements.push({ id: Date.now(), type: 'emoji', content: emoji, x: 0.5, y: 0.5, sizeRatio: 0.15 });
+      renderHudEditor();
+    }
+
+    function removeHudElement(id) {
+      hudElements = hudElements.filter(e => e.id !== id);
+      renderHudEditor();
+    }
+
+    function clearHudElements() {
+      if(confirm('Hapus semua elemen dari frame?')) {
+        hudElements = [];
+        renderHudEditor();
+      }
+    }
+
+    function renderHudEditor() {
+      const box = document.getElementById('hud-preview-box');
+      box.innerHTML = '';
+      hudElements.forEach(el => {
+        const div = document.createElement('div');
+        div.className = 'hud-element';
+        div.style.left = (el.x * 100) + '%';
+        div.style.top = (el.y * 100) + '%';
+        
+        if (el.type === 'text') {
+          div.style.color = el.color;
+          div.style.fontSize = `${el.sizeRatio * 100}cqh`;
+          div.style.fontFamily = 'Georgia, serif';
+          div.style.fontWeight = 'bold';
+        } else {
+          div.style.fontSize = `${el.sizeRatio * 100}cqh`;
+        }
+        div.textContent = el.content;
+        
+        const del = document.createElement('div');
+        del.className = 'del-btn'; del.textContent = '✕';
+        del.onmousedown = (e) => { e.stopPropagation(); removeHudElement(el.id); };
+        div.appendChild(del);
+
+        // Resize button
+        const resize = document.createElement('div');
+        resize.className = 'resize-btn'; resize.textContent = '⤡';
+        resize.onmousedown = (e) => {
+          e.stopPropagation();
+          const startY = e.clientY;
+          const startSize = el.sizeRatio;
+          const boxH = box.getBoundingClientRect().height;
+          
+          const move = (ev) => {
+            const dy = ev.clientY - startY;
+            const deltaRatio = dy / boxH;
+            el.sizeRatio = Math.max(0.02, Math.min(1.0, startSize + deltaRatio));
+            div.style.fontSize = `${el.sizeRatio * 100}cqh`;
+          };
+          const up = () => {
+            document.removeEventListener('mousemove', move);
+            document.removeEventListener('mouseup', up);
+          };
+          document.addEventListener('mousemove', move);
+          document.addEventListener('mouseup', up);
+        };
+        div.appendChild(resize);
+
+        // Simple Drag
+        div.onmousedown = (e) => {
+          e.stopPropagation();
+          const rect = box.getBoundingClientRect();
+          const move = (ev) => {
+            let nx = (ev.clientX - rect.left) / rect.width;
+            let ny = (ev.clientY - rect.top) / rect.height;
+            el.x = Math.max(0, Math.min(1, nx));
+            el.y = Math.max(0, Math.min(1, ny));
+            div.style.left = (el.x * 100) + '%';
+            div.style.top = (el.y * 100) + '%';
+          };
+          const up = () => {
+            document.removeEventListener('mousemove', move);
+            document.removeEventListener('mouseup', up);
+          };
+          document.addEventListener('mousemove', move);
+          document.addEventListener('mouseup', up);
+        };
+        box.appendChild(div);
+      });
+    }
+
+    function updateLiveHud() {
+      const container = document.getElementById('frame-custom');
+      if (!container) return;
+      container.innerHTML = '';
+      hudElements.forEach(el => {
+        const div = document.createElement('div');
+        div.style.position = 'absolute';
+        div.style.left = (el.x * 100) + '%';
+        div.style.top = (el.y * 100) + '%';
+        div.style.transform = 'translate(-50%, -50%)';
+        div.style.whiteSpace = 'nowrap';
+        div.style.pointerEvents = 'none';
+        
+        if (el.type === 'text') {
+          div.style.color = el.color;
+          div.style.fontSize = `${el.sizeRatio * 100}cqh`;
+          div.style.fontFamily = 'Georgia, serif';
+          div.style.fontWeight = 'bold';
+        } else {
+          div.style.fontSize = `${el.sizeRatio * 100}cqh`;
+        }
+        div.textContent = el.content;
+        container.appendChild(div);
+      });
+    }
+
+    // ── Capture ─────────────────────────────────────────────────────
+    async function capturePhoto(overrideTimer) {
+      if (!stream) { showToast('⚠️ Nyalakan kamera dulu!'); return; }
+      document.getElementById('capture-btn').disabled = true;
+
+      const t = overrideTimer !== undefined ? overrideTimer : timerSeconds;
+      if (t > 0) await runCountdown(t);
+
+      flashEffect();
+      const dataUrl = drawToCanvas();
+      await sendPhoto(dataUrl);
+      document.getElementById('capture-btn').disabled = false;
+      photoCount++;
+      document.getElementById('photo-count').innerHTML = `${photoCount}<span>foto diambil</span>`;
+    }
+
+    function runCountdown(secs) {
+      return new Promise(resolve => {
+        const el = document.getElementById('countdown');
+        let n = secs;
+        el.classList.add('show');
+        const tick = () => {
+          el.textContent = n;
+          if (n <= 0) { el.classList.remove('show'); resolve(); return; }
+          n--;
+          setTimeout(tick, 1000);
+        };
+        tick();
+      });
+    }
+
+    function flashEffect() {
+      const f = document.getElementById('flash');
+      f.style.opacity = '1';
+      setTimeout(() => f.style.opacity = '0', 120);
+    }
+
+    function drawToCanvas() {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const vidW = video.videoWidth || 1600;
+      const vidH = video.videoHeight || 1200;
+      
+      const targetRatio = 4 / 3;
+      const videoRatio = vidW / vidH;
+      
+      let drawW = vidW;
+      let drawH = vidH;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (videoRatio > targetRatio + 0.01) {
+        drawW = vidH * targetRatio;
+        offsetX = (vidW - drawW) / 2;
+      } else if (videoRatio < targetRatio - 0.01) {
+        drawH = vidW / targetRatio;
+        offsetY = (vidH - drawH) / 2;
+      }
+
+      canvas.width = drawW;
+      canvas.height = drawH;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, offsetX, offsetY, drawW, drawH, 0, 0, drawW, drawH);
+
+      const W = drawW;
+      const H = drawH;
+
+      // Frames
+      if (currentFrame === 'gold') {
+        ctx.strokeStyle = '#c9a84c'; ctx.lineWidth = Math.round(W * 0.007);
+        ctx.strokeRect(W * 0.015, H * 0.02, W * 0.97, H * 0.96);
+        ctx.lineWidth = 1; ctx.setLineDash([12, 8]);
+        ctx.strokeRect(W * 0.027, H * 0.037, W * 0.946, H * 0.926);
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#c9a84c'; ctx.font = `${Math.round(H * 0.028)}px Georgia,serif`;
+        ctx.textAlign = 'center'; ctx.fillText('✦ KENANGAN TERINDAH ✦', W / 2, H * 0.985);
+      }
+      if (currentFrame === 'floral') {
+        ctx.strokeStyle = '#d4a5a5'; ctx.lineWidth = Math.round(W * 0.005);
+        ctx.strokeRect(W * 0.01, H * 0.013, W * 0.98, H * 0.974);
+        ctx.font = `${Math.round(H * 0.08)}px serif`;
+        ctx.textAlign = 'left'; ctx.fillText('🌸', W * 0.02, H * 0.08);
+        ctx.textAlign = 'right'; ctx.fillText('🌸', W * 0.98, H * 0.08);
+        ctx.textAlign = 'left'; ctx.fillText('🌿', W * 0.02, H * 0.98);
+        ctx.textAlign = 'right'; ctx.fillText('🌿', W * 0.98, H * 0.98);
+      }
+      if (currentFrame === 'polaroid') {
+        ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(0, 0, W, H);
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+        ctx.strokeRect(W * 0.025, H * 0.033, W * 0.95, H * 0.884);
+        ctx.fillStyle = 'white'; ctx.font = `italic ${Math.round(H * 0.03)}px Georgia,serif`;
+        ctx.textAlign = 'center'; ctx.fillText('— selamat jalan —', W / 2, H * 0.975);
+      }
+      if (currentFrame === 'vintage') {
+        ctx.fillStyle = 'rgba(107,76,42,0.22)'; ctx.fillRect(0, 0, W, H);
+        ctx.strokeStyle = '#6b4c2a'; ctx.lineWidth = Math.round(W * 0.018); ctx.strokeRect(0, 0, W, H);
+        ctx.strokeStyle = '#c9a84c'; ctx.lineWidth = Math.round(W * 0.004);
+        ctx.strokeRect(W * 0.025, H * 0.037, W * 0.95, H * 0.926);
+      }
+      if (currentFrame === 'custom') {
+        hudElements.forEach(el => {
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const fontSize = H * el.sizeRatio;
+          
+          if (el.type === 'text') {
+            ctx.fillStyle = el.color;
+            ctx.font = `bold ${fontSize}px Georgia, serif`;
+            ctx.fillText(el.content, W * el.x, H * el.y);
+          } else if (el.type === 'emoji') {
+            // Emojis might need standard font to render properly on canvas
+            ctx.font = `${fontSize}px Arial, sans-serif`;
+            ctx.fillText(el.content, W * el.x, H * el.y);
+          }
+        });
+      }
+
+      // Timestamp
+      const now = new Date();
+      const stamp = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.font = `${Math.round(H * 0.016)}px monospace`;
+      ctx.textAlign = 'right';
+      ctx.fillText(stamp, W * 0.975, H * 0.975);
+
+      return canvas.toDataURL('image/jpeg', 0.92);
+    }
+
+    // ── Send photo to server ─────────────────────────────────────────
+    async function sendPhoto(dataUrl) {
+      showToast('💾 Menyimpan foto...');
+      try {
+        const res = await fetch('/api/photo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dataUrl,
+            frame: currentFrame,
+            accessToken,
+            mainFolder: document.getElementById('folder-name').value.trim() || 'Photo Booth Perpisahan',
+            category: config.currentCategory || 'Umum'
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          log(`📸 Foto disimpan: ${data.filename}`, 'ok');
+          showToast(accessToken ? '📸 Foto disimpan & diupload ke Drive!' : '📸 Foto tersimpan!');
+        }
+      } catch (e) {
+        log('Error: ' + e.message, 'err');
+        showToast('❌ Gagal simpan: ' + e.message);
+      }
+    }
+
+    // ── Google Auth ─────────────────────────────────────────────────
+    async function syncCounter() {
+      if (!accessToken) return;
+      try {
+        log('Memeriksa file di Google Drive...', 'info');
+        const res = await fetch('/api/sync-counter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accessToken,
+            mainFolder: document.getElementById('folder-name').value.trim() || 'Photo Booth Perpisahan',
+            category: config.currentCategory || 'Umum'
+          })
+        });
+        const data = await res.json();
+        if (data.counter !== undefined) {
+          log(`Sinkronisasi Drive: Lanjut ke foto ${data.counter + 1}`, 'ok');
+          photoCount = data.counter;
+          document.getElementById('photo-count').innerHTML = `${photoCount}<span>foto diambil</span>`;
+        }
+      } catch (e) {
+        log('Gagal sync counter: ' + e.message, 'err');
+      }
+    }
+
+    function loadGIS() {
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.onload = initGIS;
+      document.head.appendChild(s);
+    }
+
+    function restoreGoogleSession() {
+      setStatus('drive', 'green', 'Drive OK');
+      document.getElementById('auth-btn').textContent = '✅ Terhubung ke Drive';
+      document.getElementById('user-row').style.display = 'flex';
+      fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }).then(r => r.json()).then(d => {
+        if (d.error && d.error.code === 401) {
+          sessionStorage.removeItem('google_access_token');
+          accessToken = null;
+          setStatus('drive', 'red', 'Sesi Berakhir');
+          document.getElementById('auth-btn').textContent = '🔑 Login Google';
+          document.getElementById('user-row').style.display = 'none';
+        } else {
+          document.getElementById('user-name').textContent = d.name || d.email || 'Terhubung';
+          log('Sesi Google Drive dipulihkan', 'ok');
+          syncCounter();
+        }
+      }).catch(e => log('Gagal memulihkan sesi: ' + e.message, 'err'));
+    }
+
+    function initGIS() {
+      const id = document.getElementById('client-id').value.trim();
+      if (!id || !window.google) return;
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: id,
+        scope: 'https://www.googleapis.com/auth/drive.file profile email',
+        callback: (resp) => {
+          if (resp.error) { log('Auth error: ' + resp.error, 'err'); return; }
+          accessToken = resp.access_token;
+          sessionStorage.setItem('google_access_token', accessToken);
+          restoreGoogleSession();
+          showToast('✅ Login Google berhasil!');
+        }
+      });
+    }
+
+    function handleAuth() {
+      const id = document.getElementById('client-id').value.trim();
+      if (!id) { showToast('⚠️ Masukkan Client ID!'); return; }
+      if (!tokenClient) { initGIS(); setTimeout(handleAuth, 600); return; }
+      tokenClient.requestAccessToken();
+    }
+
+    loadGIS();
+
+    // ── Settings Toggle ─────────────────────────────────────────────
+    function toggleSettings() {
+      const btn = document.getElementById('gear-btn');
+      const dropdown = document.getElementById('settings-dropdown');
+      btn.classList.toggle('active');
+      dropdown.classList.toggle('open');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const wrapper = document.querySelector('.gear-wrapper');
+      if (!wrapper.contains(e.target)) {
+        document.getElementById('gear-btn').classList.remove('active');
+        document.getElementById('settings-dropdown').classList.remove('open');
+      }
+    });
+
+    // ── Console Toggle ──────────────────────────────────────────────
+    function toggleConsole() {
+      document.body.classList.toggle('console-open');
+      document.getElementById('console-btn').classList.toggle('active');
+    }
+
+    let logCount = 0;
+
+    // ── Remote URL ──────────────────────────────────────────────────
+    async function detectIP() {
+      try {
+        await fetch('/api/photos');
+      } catch (e) { }
+    }
+    detectIP();
+
+    // ── Utils ───────────────────────────────────────────────────────
+    function setStatus(id, color, text) {
+      const dot = document.getElementById(id + '-dot');
+      const span = document.getElementById(id + '-status');
+      if (dot) dot.style.background = `var(--${color})`;
+      if (span) span.textContent = text;
+    }
+
+    function log(msg, type = '') {
+      const div = document.createElement('div');
+      div.className = 'log-entry ' + type;
+      const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      div.textContent = `[${time}] ${msg}`;
+      const logEl = document.getElementById('log');
+      logEl.prepend(div);
+      if (logEl.children.length > 50) logEl.lastChild.remove();
+      logCount++;
+      const countEl = document.getElementById('console-count');
+      if (countEl) countEl.textContent = logCount + ' entries';
+    }
+
+    let toastT;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastT);
+      toastT = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    log('Server berjalan', 'ok');
+  </script>
+</body>
+
+</html>
