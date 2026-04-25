@@ -22,9 +22,10 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── In-memory store ───────────────────────────────────────────────
-const photos = [];            // { id, dataUrl, filename, category, uploadedToDrive, driveFileId }
+const photos = [];            // { id, dataUrl, filename, category, uploadedToDrive, driveFileId, thumbnailLink }
 const categoryCounters = {};  // { 'Kelas A': 3, 'Kelas B': 1 }
 const serverInstanceId = Date.now().toString();
+let globalAccessToken = null;
 
 function incrementCategoryCounter(cat) {
   categoryCounters[cat] = (categoryCounters[cat] || 0) + 1;
@@ -80,6 +81,7 @@ function broadcast(data) {
 app.post('/api/photo', async (req, res) => {
   const { dataUrl, accessToken, mainFolder, category } = req.body;
   if (!dataUrl) return res.status(400).json({ error: 'No photo data' });
+  if (accessToken) globalAccessToken = accessToken;
 
   const cat      = category || 'Umum';
   const id       = Date.now();
@@ -108,9 +110,27 @@ app.post('/api/photo', async (req, res) => {
 });
 
 // ── API: Download foto ────────────────────────────────────────────
-app.get('/api/photo/:id', (req, res) => {
+app.get('/api/photo/:id', async (req, res) => {
   const photo = photos.find(p => p.id == req.params.id);
   if (!photo) return res.status(404).json({ error: 'Not found' });
+  
+  if (!photo.dataUrl && photo.driveFileId) {
+    if (!globalAccessToken) return res.status(401).json({ error: 'No access token on server' });
+    try {
+      const fetch = (await import('node-fetch')).default;
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${photo.driveFileId}?alt=media`, {
+        headers: { Authorization: `Bearer ${globalAccessToken}` }
+      });
+      if (!response.ok) throw new Error('Drive fetch failed');
+      res.set('Content-Type', 'image/jpeg');
+      res.set('Content-Disposition', `attachment; filename="${photo.filename}"`);
+      response.body.pipe(res);
+      return;
+    } catch(e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
   const buf = Buffer.from(photo.dataUrl.replace(/^data:image\/\w+;base64,/, ''), 'base64');
   res.set('Content-Type', 'image/jpeg');
   res.set('Content-Disposition', `attachment; filename="${photo.filename}"`);
@@ -126,23 +146,49 @@ app.get('/api/photos', (req, res) => {
     filename: p.filename,
     category: p.category,
     uploadedToDrive: p.uploadedToDrive,
-    driveFileId: p.driveFileId
+    driveFileId: p.driveFileId,
+    thumbnailLink: p.thumbnailLink
   })));
+});
+
+// ── API: Counter per kategori ─────────────────────────────────────
+app.get('/api/category-count', (req, res) => {
+  const cat = req.query.category;
+  res.json({ count: categoryCounters[cat] || 0 });
 });
 
 // ── API: Thumbnail ────────────────────────────────────────────────
 app.get('/api/photo/:id/thumb', (req, res) => {
   const photo = photos.find(p => p.id == req.params.id);
   if (!photo) return res.status(404).json({ error: 'Not found' });
+  if (photo.thumbnailLink) {
+    return res.json({ dataUrl: photo.thumbnailLink });
+  }
   res.json({ dataUrl: photo.dataUrl });
 });
 
 // ── API: Hapus foto ───────────────────────────────────────────────
-app.delete('/api/photo/:id', (req, res) => {
+app.delete('/api/photo/:id', async (req, res) => {
   const index = photos.findIndex(p => p.id == req.params.id);
   if (index !== -1) {
+    const photo = photos[index];
     photos.splice(index, 1);
     broadcast({ type: 'photo_deleted', id: req.params.id });
+    
+    // Hapus dari Google Drive jika ada
+    if (photo.driveFileId && globalAccessToken) {
+      try {
+        const fetch = (await import('node-fetch')).default;
+        await fetch(`https://www.googleapis.com/drive/v3/files/${photo.driveFileId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${globalAccessToken}` }
+        });
+        console.log(`🗑️ Deleted from Drive: ${photo.filename}`);
+      } catch (e) {
+        console.error('Failed to delete from Drive:', e.message);
+      }
+    }
+    
     res.json({ success: true });
   } else {
     res.status(404).json({ error: 'Not found' });
@@ -154,6 +200,7 @@ app.delete('/api/photo/:id', (req, res) => {
 app.post('/api/sync-counter', async (req, res) => {
   const { accessToken, mainFolder, category } = req.body;
   if (!accessToken) return res.json({ error: 'No token' });
+  globalAccessToken = accessToken;
 
   const cat = category || 'Umum';
 
@@ -183,12 +230,14 @@ app.post('/api/sync-counter', async (req, res) => {
     // Hitung file terbanyak di subfolder
     const fileQuery = `'${subFolderId}' in parents and mimeType='image/jpeg' and trashed=false`;
     r = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(fileQuery)}&fields=files(name)&pageSize=1000`,
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(fileQuery)}&fields=files(id,name,thumbnailLink)&pageSize=1000`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     d = await r.json();
 
     let maxNum = 0;
+    let addedNewPhotos = false;
+    
     if (d.files) {
       d.files.forEach(f => {
         const match = f.name.match(/foto\s*(\d+)\.jpg/i);
@@ -196,12 +245,38 @@ app.post('/api/sync-counter', async (req, res) => {
           const n = parseInt(match[1], 10);
           if (n > maxNum) maxNum = n;
         }
+        
+        // Add to photos array if not exists
+        const existing = photos.find(p => p.driveFileId === f.id || (p.filename === f.name && p.category === cat));
+        if (!existing) {
+          photos.push({
+            id: f.id,
+            filename: f.name,
+            category: cat,
+            uploadedToDrive: true,
+            driveFileId: f.id,
+            thumbnailLink: f.thumbnailLink
+          });
+          addedNewPhotos = true;
+        }
       });
     }
 
     // Pakai angka terbesar antara memory dan Drive
     if (maxNum > (categoryCounters[cat] || 0)) {
       categoryCounters[cat] = maxNum;
+    }
+    
+    if (addedNewPhotos) {
+      // Sort descending
+      photos.sort((a, b) => {
+        const matchA = a.filename.match(/foto\s*(\d+)/i);
+        const matchB = b.filename.match(/foto\s*(\d+)/i);
+        const numA = matchA ? parseInt(matchA[1], 10) : 0;
+        const numB = matchB ? parseInt(matchB[1], 10) : 0;
+        return numB - numA; // higher number first
+      });
+      broadcast({ type: 'sync_photos_done' });
     }
 
     console.log(`[Sync] Kategori "${cat}" counter: ${categoryCounters[cat]}`);

@@ -638,6 +638,9 @@
           renderGallery();
           showToast('🗑️ Foto telah dihapus');
         }
+        if (msg.type === 'sync_photos_done') {
+          loadPhotosForCategory(currentCategory);
+        }
       };
 
       ws.onclose = () => {
@@ -704,15 +707,6 @@
     // ── Gallery ──────────────────────────────────────────────────────
     async function loadPhotosForCategory(cat) {
       try {
-        const res = await fetch(`/api/photos?category=${encodeURIComponent(cat)}`);
-        const data = await res.json();
-        photos = data;
-        renderGallery();
-      } catch(e) { console.error('Failed to load photos:', e); }
-    }
-
-    async function loadPhotosForCategory(cat) {
-      try {
         const [resPhotos, resCount] = await Promise.all([
           fetch(`/api/photos?category=${encodeURIComponent(cat)}`),
           fetch(`/api/category-count?category=${encodeURIComponent(cat)}`)
@@ -724,7 +718,7 @@
         if (countData.count !== undefined) {
           document.getElementById('gallery-count').textContent = countData.count + ' foto';
         }
-      } catch(e) { console.error(e); }
+      } catch(e) { console.error('Failed to load photos:', e); }
     }
 
     function renderGallery() {
@@ -744,8 +738,8 @@
         loading="lazy">
       <div class="photo-info">${p.filename.replace('.jpg', '')}</div>
       <div class="photo-card-actions">
-        <button class="photo-action-btn dl-btn" onclick="downloadPhoto(${p.id}, '${p.filename}')">⬇️</button>
-        <button class="photo-action-btn del-btn" onclick="deletePhoto(${p.id})">🗑️</button>
+        <button class="photo-action-btn dl-btn" onclick="downloadPhoto('${p.id}', '${p.filename}')">⬇️</button>
+        <button class="photo-action-btn del-btn" onclick="deletePhoto('${p.id}')">🗑️</button>
       </div>
       ${p.uploadedToDrive
           ? `<div class="uploaded-badge">☁️ Drive</div>`
@@ -781,14 +775,14 @@
     async function downloadPhoto(id, filename) {
       showToast('⬇️ Mengunduh...');
       try {
-        // Try from cache first
-        if (photoData[id]) {
+        // Try from cache first, but only if it's a base64 data URL (not a Drive thumbnail link)
+        if (photoData[id] && photoData[id].startsWith('data:')) {
           const a = document.createElement('a');
           a.href = photoData[id];
           a.download = filename;
           a.click();
         } else {
-          // Direct download via server
+          // Direct download via server (to get full size image)
           const a = document.createElement('a');
           a.href = `/api/photo/${id}`;
           a.download = filename;
