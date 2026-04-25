@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Photo Booth — Laptop View</title>
   <link
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@300;400&family=Montserrat:wght@700&family=Satisfy&family=Bebas+Neue&display=swap"
     rel="stylesheet">
   <style>
     :root {
@@ -32,7 +32,7 @@
       height: 100%;
       background: var(--bg);
       color: var(--cream);
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Outfit', sans-serif;
       overflow: hidden;
     }
 
@@ -76,11 +76,12 @@
     }
 
     header .logo {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-size: 18px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 16px;
       color: var(--gold);
-      letter-spacing: 0.5px;
+      letter-spacing: 2px;
     }
 
     header .sep {
@@ -455,7 +456,7 @@
       color: var(--cream);
       padding: 8px 10px;
       border-radius: 8px;
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Outfit', sans-serif;
       font-size: 12px;
       cursor: pointer;
       margin-bottom: 8px;
@@ -477,7 +478,7 @@
       border-radius: 8px;
       border: none;
       cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Outfit', sans-serif;
       font-size: 13px;
       font-weight: 500;
       transition: all 0.2s;
@@ -574,7 +575,7 @@
       color: var(--cream);
       padding: 7px 10px;
       border-radius: 8px;
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Outfit', sans-serif;
       font-size: 12px;
       margin-bottom: 6px;
     }
@@ -611,7 +612,7 @@
       color: var(--muted);
       display: block;
       margin-top: 2px;
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Outfit', sans-serif;
     }
 
     /* Log */
@@ -710,7 +711,7 @@
     
     .hud-input {
       width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--cream);
-      padding: 8px 10px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; margin-bottom: 8px;
+      padding: 8px 10px; border-radius: 8px; font-family: 'Outfit', sans-serif; font-size: 13px; margin-bottom: 8px;
     }
     .hud-input:focus { outline: none; border-color: var(--gold); }
     
@@ -750,6 +751,32 @@
     .hud-element:hover .resize-btn { display: flex; }
 
     .btn-row { display: flex; gap: 8px; margin-top: 16px; }
+
+    /* Custom Modal */
+    .custom-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000;
+      display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+    }
+    .custom-modal-overlay.show { display: flex; }
+    .custom-modal-box {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      padding: 24px; width: 320px; max-width: 90%; text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes modalPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .custom-modal-title { font-size: 18px; color: var(--gold); margin-bottom: 12px; font-family: 'Playfair Display', serif; font-style: italic; }
+    .custom-modal-text { font-size: 13px; color: var(--cream); margin-bottom: 24px; line-height: 1.5; }
+    .custom-modal-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--cream); padding: 10px; border-radius: 8px; margin-bottom: 20px; font-family: 'Outfit', sans-serif; font-size: 14px; display: none; }
+    .custom-modal-input:focus { outline: none; border-color: var(--gold); }
+    .custom-modal-actions { display: flex; gap: 12px; justify-content: center; }
+    .custom-modal-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; font-family: 'Outfit', sans-serif; transition: all 0.2s; }
+    .custom-modal-btn.cancel { background: rgba(255,255,255,0.06); color: var(--cream); border: 1px solid var(--border); }
+    .custom-modal-btn.cancel:hover { background: rgba(255,255,255,0.1); }
+    .custom-modal-btn.confirm { background: var(--gold); color: #1a1000; }
+    .custom-modal-btn.confirm:hover { background: var(--gold2); transform: translateY(-1px); }
+    .custom-modal-btn.danger { background: var(--red); color: #fff; }
+    .custom-modal-btn.danger:hover { filter: brightness(1.1); transform: translateY(-1px); }
   </style>
 </head>
 
@@ -905,6 +932,19 @@
 
   <div id="toast"></div>
 
+  <!-- Custom Modal -->
+  <div class="custom-modal-overlay" id="custom-modal">
+    <div class="custom-modal-box">
+      <div class="custom-modal-title" id="custom-modal-title">Konfirmasi</div>
+      <div class="custom-modal-text" id="custom-modal-text">Apakah Anda yakin?</div>
+      <input type="text" id="custom-modal-input" class="custom-modal-input">
+      <div class="custom-modal-actions">
+        <button class="custom-modal-btn cancel" id="custom-modal-cancel">Batal</button>
+        <button class="custom-modal-btn confirm" id="custom-modal-confirm">Ya</button>
+      </div>
+    </div>
+  </div>
+
   <!-- HUD Editor -->
   <div class="hud-overlay" id="hud-editor">
     <div class="hud-sidebar">
@@ -913,6 +953,14 @@
       <div class="hud-section">
         <label>➕ Tambah Teks</label>
         <input type="text" id="hud-text-input" class="hud-input" placeholder="Ketik teks...">
+        <select id="hud-text-font" class="hud-input">
+          <option value="'Outfit', sans-serif">Modern (Outfit)</option>
+          <option value="'Playfair Display', serif">Klasik (Playfair)</option>
+          <option value="'Montserrat', sans-serif">Tegas (Montserrat)</option>
+          <option value="'Satisfy', cursive">Tulisan Tangan (Satisfy)</option>
+          <option value="'Bebas Neue', cursive">Poster (Bebas Neue)</option>
+          <option value="'DM Mono', monospace">Ketik (Mono)</option>
+        </select>
         <div style="display:flex;gap:6px;">
           <input type="color" id="hud-text-color" value="#ffffff" style="width:40px; height:36px; padding:0; border:none; background:none; cursor:pointer;">
           <button class="btn btn-gold" onclick="addHudText()" style="flex:1;">Tambah Teks</button>
@@ -933,6 +981,11 @@
         </div>
       </div>
 
+      <div class="hud-section">
+        <label>➕ Tambah Gambar / Logo</label>
+        <input type="file" accept="image/*" class="hud-input" onchange="addHudImage(this)">
+      </div>
+
       <div class="hud-section" style="margin-top:auto">
         <div class="btn-row">
           <button class="btn btn-ghost" onclick="clearHudElements()">Bersihkan</button>
@@ -951,6 +1004,68 @@
   <script>
     // ── Config ──────────────────────────────────────────────────────
     let config = JSON.parse(localStorage.getItem('photobooth_config') || '{}');
+    
+    // Custom Popups
+    function customConfirm(message, isDanger = false) {
+      return new Promise(resolve => {
+        const overlay = document.getElementById('custom-modal');
+        const title = document.getElementById('custom-modal-title');
+        const text = document.getElementById('custom-modal-text');
+        const input = document.getElementById('custom-modal-input');
+        const btnConfirm = document.getElementById('custom-modal-confirm');
+        const btnCancel = document.getElementById('custom-modal-cancel');
+        
+        title.textContent = 'Konfirmasi';
+        text.textContent = message;
+        input.style.display = 'none';
+        btnConfirm.textContent = 'Ya';
+        btnConfirm.className = `custom-modal-btn ${isDanger ? 'danger' : 'confirm'}`;
+        
+        overlay.classList.add('show');
+        
+        const close = (val) => {
+          overlay.classList.remove('show');
+          btnConfirm.onclick = null;
+          btnCancel.onclick = null;
+          resolve(val);
+        };
+        
+        btnConfirm.onclick = () => close(true);
+        btnCancel.onclick = () => close(false);
+      });
+    }
+
+    function customPrompt(message, defaultVal = '') {
+      return new Promise(resolve => {
+        const overlay = document.getElementById('custom-modal');
+        const title = document.getElementById('custom-modal-title');
+        const text = document.getElementById('custom-modal-text');
+        const input = document.getElementById('custom-modal-input');
+        const btnConfirm = document.getElementById('custom-modal-confirm');
+        const btnCancel = document.getElementById('custom-modal-cancel');
+        
+        title.textContent = 'Input Dibutuhkan';
+        text.textContent = message;
+        input.style.display = 'block';
+        input.value = defaultVal;
+        btnConfirm.textContent = 'Simpan';
+        btnConfirm.className = 'custom-modal-btn confirm';
+        
+        overlay.classList.add('show');
+        input.focus();
+        
+        const close = (val) => {
+          overlay.classList.remove('show');
+          btnConfirm.onclick = null;
+          btnCancel.onclick = null;
+          resolve(val);
+        };
+        
+        btnConfirm.onclick = () => close(input.value.trim() || null);
+        btnCancel.onclick = () => close(null);
+      });
+    }
+
     let accessToken = null;
     let tokenClient = null;
     let tokenExpiry = 0; // timestamp ms kapan token expire
@@ -1008,12 +1123,16 @@
           capturePhoto(msg.timer);
         }
         if (msg.type === 'photo_uploaded') {
-          log('✅ Foto berhasil diupload ke Google Drive', 'ok');
+          log(`✅ Uploaded: ${msg.filename || 'Foto'} berhasil ke Drive`, 'ok');
           showToast('☁️ Tersimpan di Drive!');
         }
         if (msg.type === 'photo_upload_error') {
-          log('❌ Gagal upload Drive: ' + msg.error, 'err');
+          log(`❌ Gagal upload Drive [${msg.id}]: ` + msg.error, 'err');
           showToast('❌ Gagal upload Drive: ' + msg.error);
+        }
+        if (msg.type === 'photo_deleted') {
+          log(`🗑️ Deleted: ${msg.filename || 'Foto'} telah dihapus`, 'info');
+          showToast('🗑️ Foto telah dihapus');
         }
         if (msg.type === 'set_category') {
           if (config.currentCategory === msg.category) return; // Prevent duplicate loop
@@ -1072,8 +1191,8 @@
     async function startCamera() {
       const deviceId = document.getElementById('cam-select').value;
       const constraints = {
-        video: deviceId ? { deviceId: { exact: deviceId }, width: { ideal: 1600 }, height: { ideal: 1200 } }
-          : { width: { ideal: 1600 }, height: { ideal: 1200 } },
+        video: deviceId ? { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+          : { width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false
       };
 
@@ -1142,7 +1261,8 @@
     function addHudText() {
       const txt = document.getElementById('hud-text-input').value.trim() || 'Teks Baru';
       const col = document.getElementById('hud-text-color').value;
-      hudElements.push({ id: Date.now(), type: 'text', content: txt, color: col, x: 0.5, y: 0.5, sizeRatio: 0.08 });
+      const font = document.getElementById('hud-text-font').value;
+      hudElements.push({ id: Date.now(), type: 'text', content: txt, color: col, fontFamily: font, x: 0.5, y: 0.5, sizeRatio: 0.08 });
       renderHudEditor();
     }
 
@@ -1151,13 +1271,29 @@
       renderHudEditor();
     }
 
+    function addHudImage(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          hudElements.push({ id: Date.now(), type: 'image', content: img, src: e.target.result, x: 0.5, y: 0.5, sizeRatio: 0.2 });
+          renderHudEditor();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+      input.value = '';
+    }
+
     function removeHudElement(id) {
       hudElements = hudElements.filter(e => e.id !== id);
       renderHudEditor();
     }
 
-    function clearHudElements() {
-      if(confirm('Hapus semua elemen dari frame?')) {
+    async function clearHudElements() {
+      if(await customConfirm('Hapus semua elemen dari frame?', true)) {
         hudElements = [];
         renderHudEditor();
       }
@@ -1175,12 +1311,21 @@
         if (el.type === 'text') {
           div.style.color = el.color;
           div.style.fontSize = `${el.sizeRatio * 100}cqh`;
-          div.style.fontFamily = 'Georgia, serif';
+          div.style.fontFamily = el.fontFamily || 'Georgia, serif';
           div.style.fontWeight = 'bold';
-        } else {
+          div.textContent = el.content;
+        } else if (el.type === 'emoji') {
           div.style.fontSize = `${el.sizeRatio * 100}cqh`;
+          div.textContent = el.content;
+        } else if (el.type === 'image') {
+          const imgEl = document.createElement('img');
+          imgEl.src = el.src;
+          imgEl.style.height = `${el.sizeRatio * 100}cqh`;
+          imgEl.style.display = 'block';
+          imgEl.style.pointerEvents = 'none';
+          div.appendChild(imgEl);
+          div.style.padding = '0';
         }
-        div.textContent = el.content;
         
         const del = document.createElement('div');
         del.className = 'del-btn'; del.textContent = '✕';
@@ -1200,7 +1345,12 @@
             const dy = ev.clientY - startY;
             const deltaRatio = dy / boxH;
             el.sizeRatio = Math.max(0.02, Math.min(1.0, startSize + deltaRatio));
-            div.style.fontSize = `${el.sizeRatio * 100}cqh`;
+            if (el.type === 'image') {
+              const imgEl = div.querySelector('img');
+              if (imgEl) imgEl.style.height = `${el.sizeRatio * 100}cqh`;
+            } else {
+              div.style.fontSize = `${el.sizeRatio * 100}cqh`;
+            }
           };
           const up = () => {
             document.removeEventListener('mousemove', move);
@@ -1250,12 +1400,19 @@
         if (el.type === 'text') {
           div.style.color = el.color;
           div.style.fontSize = `${el.sizeRatio * 100}cqh`;
-          div.style.fontFamily = 'Georgia, serif';
+          div.style.fontFamily = el.fontFamily || 'Georgia, serif';
           div.style.fontWeight = 'bold';
-        } else {
+          div.textContent = el.content;
+        } else if (el.type === 'emoji') {
           div.style.fontSize = `${el.sizeRatio * 100}cqh`;
+          div.textContent = el.content;
+        } else if (el.type === 'image') {
+          const imgEl = document.createElement('img');
+          imgEl.src = el.src;
+          imgEl.style.height = `${el.sizeRatio * 100}cqh`;
+          imgEl.style.display = 'block';
+          div.appendChild(imgEl);
         }
-        div.textContent = el.content;
         container.appendChild(div);
       });
     }
@@ -1366,12 +1523,15 @@
           
           if (el.type === 'text') {
             ctx.fillStyle = el.color;
-            ctx.font = `bold ${fontSize}px Georgia, serif`;
+            ctx.font = `bold ${fontSize}px ${el.fontFamily || 'Georgia, serif'}`;
             ctx.fillText(el.content, W * el.x, H * el.y);
           } else if (el.type === 'emoji') {
             // Emojis might need standard font to render properly on canvas
             ctx.font = `${fontSize}px Arial, sans-serif`;
             ctx.fillText(el.content, W * el.x, H * el.y);
+          } else if (el.type === 'image' && el.content) {
+            const imgW = (el.content.width / el.content.height) * fontSize;
+            ctx.drawImage(el.content, W * el.x - imgW / 2, H * el.y - fontSize / 2, imgW, fontSize);
           }
         });
       }

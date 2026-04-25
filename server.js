@@ -100,7 +100,7 @@ app.post('/api/photo', async (req, res) => {
       .then(fileId => {
         photo.uploadedToDrive = true;
         photo.driveFileId = fileId;
-        broadcast({ type: 'photo_uploaded', id, fileId });
+        broadcast({ type: 'photo_uploaded', id, fileId, filename: photo.filename });
       })
       .catch(e => {
         console.error('Drive upload error:', e.message);
@@ -173,7 +173,7 @@ app.delete('/api/photo/:id', async (req, res) => {
   if (index !== -1) {
     const photo = photos[index];
     photos.splice(index, 1);
-    broadcast({ type: 'photo_deleted', id: req.params.id });
+    broadcast({ type: 'photo_deleted', id: req.params.id, filename: photo.filename });
     
     // Hapus dari Google Drive jika ada
     if (photo.driveFileId && globalAccessToken) {
