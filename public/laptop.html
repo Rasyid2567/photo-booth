@@ -953,6 +953,8 @@
     let config = JSON.parse(localStorage.getItem('photobooth_config') || '{}');
     let accessToken = null;
     let tokenClient = null;
+    let tokenExpiry = 0; // timestamp ms kapan token expire
+    const TOKEN_LIFETIME = 55 * 60 * 1000; // 55 menit (token Google valid 60 menit)
     let currentFrame = 'none';
     let timerSeconds = 0;
     let stream = null;
@@ -988,15 +990,30 @@
             sessionStorage.setItem('serverInstanceId', msg.serverInstanceId);
           } else {
             const savedToken = sessionStorage.getItem('google_access_token');
-            if (savedToken && !accessToken) {
+            const savedExpiry = parseInt(sessionStorage.getItem('google_token_expiry') || '0');
+            if (savedToken && !accessToken && Date.now() < savedExpiry) {
               accessToken = savedToken;
+              tokenExpiry = savedExpiry;
               restoreGoogleSession();
+            } else if (savedToken && Date.now() >= savedExpiry) {
+              // Token expired, hapus
+              sessionStorage.removeItem('google_access_token');
+              sessionStorage.removeItem('google_token_expiry');
+              setStatus('drive', 'yellow', 'Sesi berakhir, login ulang');
             }
           }
         }
         if (msg.type === 'trigger') {
           log(`📱 Trigger dari tablet (timer: ${msg.timer}s)`, 'info');
           capturePhoto(msg.timer);
+        }
+        if (msg.type === 'photo_uploaded') {
+          log('✅ Foto berhasil diupload ke Google Drive', 'ok');
+          showToast('☁️ Tersimpan di Drive!');
+        }
+        if (msg.type === 'photo_upload_error') {
+          log('❌ Gagal upload Drive: ' + msg.error, 'err');
+          showToast('❌ Gagal upload Drive: ' + msg.error);
         }
         if (msg.type === 'set_category') {
           if (config.currentCategory === msg.category) return; // Prevent duplicate loop
@@ -1015,7 +1032,9 @@
           saveConfig();
           log(`📱 Kategori diubah dari remote: ${msg.category}`, 'info');
           showToast(`📂 Kategori: ${msg.category}`);
-          syncCounter();
+          photoCount = 0;
+          document.getElementById('photo-count').innerHTML = `0<span>foto diambil</span>`;
+          syncCounter(msg.category);
         }
       };
 
@@ -1253,8 +1272,7 @@
       const dataUrl = drawToCanvas();
       await sendPhoto(dataUrl);
       document.getElementById('capture-btn').disabled = false;
-      photoCount++;
-      document.getElementById('photo-count').innerHTML = `${photoCount}<span>foto diambil</span>`;
+      // Counter diupdate dari response server (lihat sendPhoto)
     }
 
     function runCountdown(secs) {
@@ -1373,13 +1391,14 @@
     async function sendPhoto(dataUrl) {
       showToast('💾 Menyimpan foto...');
       try {
+        const token = await getValidToken();
         const res = await fetch('/api/photo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             dataUrl,
             frame: currentFrame,
-            accessToken,
+            accessToken: token,
             mainFolder: document.getElementById('folder-name').value.trim() || 'Photo Booth Perpisahan',
             category: config.currentCategory || 'Umum'
           })
@@ -1387,7 +1406,16 @@
         const data = await res.json();
         if (data.success) {
           log(`📸 Foto disimpan: ${data.filename}`, 'ok');
-          showToast(accessToken ? '📸 Foto disimpan & diupload ke Drive!' : '📸 Foto tersimpan!');
+          // Update counter dari server (akurat per kategori)
+          photoCount = data.categoryCount;
+          document.getElementById('photo-count').innerHTML = `${photoCount}<span>foto diambil</span>`;
+          if (token) {
+            showToast('📸 Foto disimpan & diupload ke Drive!');
+            log('Upload ke Drive dimulai...', 'info');
+          } else {
+            showToast('📸 Foto tersimpan (Drive: belum login)');
+            log('Foto disimpan tanpa Drive (tidak ada token)', 'info');
+          }
         }
       } catch (e) {
         log('Error: ' + e.message, 'err');
@@ -1396,24 +1424,35 @@
     }
 
     // ── Google Auth ─────────────────────────────────────────────────
-    async function syncCounter() {
-      if (!accessToken) return;
+    async function syncCounter(overrideCat) {
+      const cat = overrideCat || config.currentCategory || 'Umum';
       try {
-        log('Memeriksa file di Google Drive...', 'info');
-        const res = await fetch('/api/sync-counter', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            accessToken,
-            mainFolder: document.getElementById('folder-name').value.trim() || 'Photo Booth Perpisahan',
-            category: config.currentCategory || 'Umum'
-          })
-        });
+        // Selalu tanya server berapa foto di kategori ini (tidak perlu token)
+        const res = await fetch(`/api/category-count?category=${encodeURIComponent(cat)}`);
         const data = await res.json();
-        if (data.counter !== undefined) {
-          log(`Sinkronisasi Drive: Lanjut ke foto ${data.counter + 1}`, 'ok');
-          photoCount = data.counter;
+        if (data.count !== undefined) {
+          photoCount = data.count;
           document.getElementById('photo-count').innerHTML = `${photoCount}<span>foto diambil</span>`;
+          log(`Kategori ${cat}: ${photoCount} foto`, 'ok');
+        }
+        // Kalau ada token, sync juga dari Drive
+        if (accessToken) {
+          log('Sinkronisasi dari Google Drive...', 'info');
+          const resDrive = await fetch('/api/sync-counter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              accessToken,
+              mainFolder: document.getElementById('folder-name').value.trim() || 'Photo Booth Perpisahan',
+              category: cat
+            })
+          });
+          const dataDrive = await resDrive.json();
+          if (dataDrive.counter !== undefined) {
+            photoCount = dataDrive.counter;
+            document.getElementById('photo-count').innerHTML = `${photoCount}<span>foto diambil</span>`;
+            log(`Drive sync: kategori ${cat} punya ${photoCount} foto`, 'ok');
+          }
         }
       } catch (e) {
         log('Gagal sync counter: ' + e.message, 'err');
@@ -1457,11 +1496,28 @@
         callback: (resp) => {
           if (resp.error) { log('Auth error: ' + resp.error, 'err'); return; }
           accessToken = resp.access_token;
+          tokenExpiry = Date.now() + TOKEN_LIFETIME;
           sessionStorage.setItem('google_access_token', accessToken);
+          sessionStorage.setItem('google_token_expiry', tokenExpiry.toString());
           restoreGoogleSession();
           showToast('✅ Login Google berhasil!');
         }
       });
+    }
+
+    async function getValidToken() {
+      if (!accessToken) return null;
+      // Kalau token mau habis dalam 2 menit, refresh
+      if (Date.now() > tokenExpiry - 2 * 60 * 1000) {
+        log('Token mau expire, refresh...', 'info');
+        return new Promise((resolve) => {
+          if (!tokenClient) { resolve(null); return; }
+          tokenClient.requestAccessToken({ prompt: '' }); // silent refresh
+          // callback sudah diset di initGIS, tunggu sebentar
+          setTimeout(() => resolve(accessToken), 2000);
+        });
+      }
+      return accessToken;
     }
 
     function handleAuth() {

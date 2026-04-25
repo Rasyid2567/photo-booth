@@ -631,6 +631,7 @@
             sel.value = msg.category;
           }
           showToast(`📂 Kategori: ${msg.category}`);
+          loadPhotosForCategory(msg.category);
         }
         if (msg.type === 'photo_deleted') {
           photos = photos.filter(x => x.id != msg.id);
@@ -710,6 +711,22 @@
       } catch(e) { console.error('Failed to load photos:', e); }
     }
 
+    async function loadPhotosForCategory(cat) {
+      try {
+        const [resPhotos, resCount] = await Promise.all([
+          fetch(`/api/photos?category=${encodeURIComponent(cat)}`),
+          fetch(`/api/category-count?category=${encodeURIComponent(cat)}`)
+        ]);
+        photos = await resPhotos.json();
+        const countData = await resCount.json();
+        renderGallery();
+        // Update count label pakai data dari server (akurat)
+        if (countData.count !== undefined) {
+          document.getElementById('gallery-count').textContent = countData.count + ' foto';
+        }
+      } catch(e) { console.error(e); }
+    }
+
     function renderGallery() {
       const gallery = document.getElementById('gallery');
       document.getElementById('gallery-count').textContent = `${photos.length} foto`;
@@ -721,7 +738,7 @@
 
       gallery.innerHTML = photos.map(p => `
     <div class="photo-card" id="card-${p.id}">
-      <img src="/api/photo/${p.id}/preview" alt="${p.filename}"
+      <img src="" alt="${p.filename}"
         onerror="this.style.display='none'"
         onload="this.style.display='block'"
         loading="lazy">
@@ -742,9 +759,15 @@
     }
 
     async function loadThumb(id) {
-      if (photoData[id]) return;
       try {
+        // Pakai cache kalau ada
+        if (photoData[id]) {
+          const img = document.querySelector(`#card-${id} img`);
+          if (img) { img.src = photoData[id]; img.style.display = 'block'; }
+          return;
+        }
         const res = await fetch(`/api/photo/${id}/thumb`);
+        if (!res.ok) return;
         const data = await res.json();
         if (data.dataUrl) {
           photoData[id] = data.dataUrl;
