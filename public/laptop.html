@@ -5,6 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Photo Booth — Laptop View</title>
+  <link rel="icon" href="/favicon.png?v=1.2" type="image/png">
+  <link rel="shortcut icon" href="/favicon.png?v=1.2" type="image/png">
+  <link rel="apple-touch-icon" href="/favicon.png?v=1.2">
   <link
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@300;400&family=Montserrat:wght@700&family=Satisfy&family=Bebas+Neue&display=swap"
     rel="stylesheet">
@@ -715,6 +718,15 @@
     }
     .hud-input:focus { outline: none; border-color: var(--gold); }
     
+    .plus-btn {
+      font-size: 18px; background: rgba(255,255,255,0.05); width: 32px; height: 32px; 
+      display: flex; align-items: center; justify-content: center; border-radius: 8px; 
+      border: 1px solid var(--border); transition: all 0.2s;
+    }
+    .hud-upload-label:hover .plus-btn {
+      border-color: var(--gold); background: rgba(201,168,76,0.1); transform: scale(1.05);
+    }
+    
     .emoji-grid {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
     }
@@ -978,12 +990,18 @@
           <span onclick="addHudSticker('🎉')">🎉</span>
           <span onclick="addHudSticker('❤️')">❤️</span>
           <span onclick="addHudSticker('🔥')">🔥</span>
+          <span onclick="addHudSticker('💦')">💦</span>
+          <span onclick="addHudSticker('🗿')">🗿</span>
+          <span onclick="addHudSticker('🕊️')">🕊️</span>
         </div>
       </div>
 
       <div class="hud-section">
-        <label>➕ Tambah Gambar / Logo</label>
-        <input type="file" accept="image/*" class="hud-input" onchange="addHudImage(this)">
+        <label for="hud-image-input" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin-bottom: 0;" class="hud-upload-label">
+          <span>Tambah Gambar / Logo</span>
+          <span class="plus-btn">➕</span>
+        </label>
+        <input type="file" id="hud-image-input" accept="image/*" style="display: none;" onchange="addHudImage(this)">
       </div>
 
       <div class="hud-section" style="margin-top:auto">
@@ -1536,13 +1554,7 @@
         });
       }
 
-      // Timestamp
-      const now = new Date();
-      const stamp = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-      ctx.fillStyle = 'rgba(255,255,255,0.45)';
-      ctx.font = `${Math.round(H * 0.016)}px monospace`;
-      ctx.textAlign = 'right';
-      ctx.fillText(stamp, W * 0.975, H * 0.975);
+      // Timestamp removed per request
 
       return canvas.toDataURL('image/jpeg', 0.92);
     }

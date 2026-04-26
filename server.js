@@ -189,6 +189,13 @@ app.delete('/api/photo/:id', async (req, res) => {
       }
     }
     
+    // Reset counter jika sudah tidak ada foto sama sekali di kategori ini (opsional, untuk kenyamanan user)
+    const remainingInCategory = photos.some(p => p.category === photo.category);
+    if (!remainingInCategory) {
+      categoryCounters[photo.category] = 0;
+      console.log(`[Counter] Reset ${photo.category} to 0 because gallery is empty`);
+    }
+
     res.json({ success: true });
   } else {
     res.status(404).json({ error: 'Not found' });
@@ -262,10 +269,9 @@ app.post('/api/sync-counter', async (req, res) => {
       });
     }
 
-    // Pakai angka terbesar antara memory dan Drive
-    if (maxNum > (categoryCounters[cat] || 0)) {
-      categoryCounters[cat] = maxNum;
-    }
+    // Update counter berdasarkan apa yang ada di Drive secara mutlak
+    // Jika Drive kosong, maxNum akan 0, sehingga counter kembali ke awal
+    categoryCounters[cat] = maxNum;
     
     if (addedNewPhotos) {
       // Sort descending

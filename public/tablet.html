@@ -9,10 +9,13 @@
   <meta name="apple-mobile-web-app-title" content="Photo Booth">
   <meta name="theme-color" content="#0f0d0b">
   <title>Photo Booth</title>
+  <link rel="icon" href="/favicon.png?v=1.2" type="image/png">
+  <link rel="shortcut icon" href="/favicon.png?v=1.2" type="image/png">
+  <link rel="apple-touch-icon" href="/favicon.png?v=1.2">
 
   <!-- PWA Manifest inline -->
   <link rel="manifest"
-    href="data:application/json;base64,eyJuYW1lIjoiUGhvdG8gQm9vdGggUGVycGlzYWhhbiIsInNob3J0X25hbWUiOiJQaG90byBCb290aCIsInN0YXJ0X3VybCI6Ii9yZW1vdGUiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGYwZDBiIiwidGhlbWVfY29sb3IiOiIjMGYwZDBiIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjJhV1YzUW05NFBTSXdJREFnTWpBd0lESXdNQ0lnZDJsa2RHZzlJakV3TUNJZ0lHaGxhV2RvZEQwaU1UQXdJaUJuY21Wa1BUSTVNQ0lnYzNWeWNtVmtQU0pCUkNJZ2NtOXNaVDBpYzJoaGNHVWlJR1p2Ym5RdFptRnRhV3g1UFNKRVRFd2lJR1p2Ym5RdFptRnRhV3g1UFNKa2JXd2lJR1p2Ym5RdGNHRjBhRDBpTVNJZ0xtWnZiblF0Wm1GdGFXeDVQU0pFVEV3aUlITmpZV3hsS0RFeE1Td3dMakUxT1N3d0xqRTFPVHd4TWl3d0xqRTFPU0F4TWl3d0xqRTFPU0F4TWl3eE1pNHhOVGsrUEM5emRtYysifV19">
+    href="data:application/json;base64,eyJuYW1lIjogIlBob3RvIEJvb3RoIFBlcnBpc2FoYW4iLCAic2hvcnRfbmFtZSI6ICJQaG90byBCb290aCIsICJzdGFydF91cmwiOiAiL3JlbW90ZSIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYwZDBiIiwgInRoZW1lX2NvbG9yIjogIiMwZjBkMGIiLCAiaWNvbnMiOiBbIHsgInNyYyI6ICIvbG9nby5wbmciLCAic2l6ZXMiOiAiMTkyeDE5MiIsICJ0eXBlIjogImltYWdlL3BuZyIgfSwgeyAic3JjIjogIi9sb2dvLnBuZyIsICJzaXplcyI6ICI1MTJ4NTEyIiwgInR5cGUiOiAiaW1hZ2UvcG5nIiB9IF0gfQ==">
 
   <link
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap"
@@ -473,29 +476,125 @@
 
     /* Custom Modal */
     .custom-modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000;
-      display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(5px);
     }
-    .custom-modal-overlay.show { display: flex; }
+
+    .custom-modal-overlay.show {
+      display: flex;
+    }
+
     .custom-modal-box {
-      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-      padding: 24px; width: 300px; max-width: 90%; text-align: center;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      width: 300px;
+      max-width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
       animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    @keyframes modalPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    .custom-modal-title { font-size: 18px; color: var(--gold); margin-bottom: 12px; font-family: 'Playfair Display', serif; font-style: italic; }
-    .custom-modal-text { font-size: 13px; color: var(--cream); margin-bottom: 24px; line-height: 1.5; }
-    .custom-modal-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--cream); padding: 10px; border-radius: 8px; margin-bottom: 20px; font-family: 'Outfit', sans-serif; font-size: 14px; display: none; }
-    .custom-modal-input:focus { outline: none; border-color: var(--gold); }
-    .custom-modal-actions { display: flex; gap: 12px; justify-content: center; }
-    .custom-modal-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; font-family: 'Outfit', sans-serif; transition: all 0.2s; -webkit-appearance: none; }
-    .custom-modal-btn.cancel { background: rgba(255,255,255,0.06); color: var(--cream); border: 1px solid var(--border); }
-    .custom-modal-btn.cancel:active { background: rgba(255,255,255,0.1); }
-    .custom-modal-btn.confirm { background: var(--gold); color: #1a1000; }
-    .custom-modal-btn.confirm:active { background: var(--gold2); transform: translateY(1px); }
-    .custom-modal-btn.danger { background: var(--red); color: #fff; }
-    .custom-modal-btn.danger:active { filter: brightness(0.9); transform: translateY(1px); }
+
+    @keyframes modalPop {
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .custom-modal-title {
+      font-size: 18px;
+      color: var(--gold);
+      margin-bottom: 12px;
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+    }
+
+    .custom-modal-text {
+      font-size: 13px;
+      color: var(--cream);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .custom-modal-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--cream);
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      display: none;
+    }
+
+    .custom-modal-input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    .custom-modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .custom-modal-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'Outfit', sans-serif;
+      transition: all 0.2s;
+      -webkit-appearance: none;
+    }
+
+    .custom-modal-btn.cancel {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--cream);
+      border: 1px solid var(--border);
+    }
+
+    .custom-modal-btn.cancel:active {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .custom-modal-btn.confirm {
+      background: var(--gold);
+      color: #1a1000;
+    }
+
+    .custom-modal-btn.confirm:active {
+      background: var(--gold2);
+      transform: translateY(1px);
+    }
+
+    .custom-modal-btn.danger {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .custom-modal-btn.danger:active {
+      filter: brightness(0.9);
+      transform: translateY(1px);
+    }
   </style>
 </head>
 
@@ -587,22 +686,22 @@
         const input = document.getElementById('custom-modal-input');
         const btnConfirm = document.getElementById('custom-modal-confirm');
         const btnCancel = document.getElementById('custom-modal-cancel');
-        
+
         title.textContent = 'Konfirmasi';
         text.textContent = message;
         input.style.display = 'none';
         btnConfirm.textContent = 'Ya';
         btnConfirm.className = `custom-modal-btn ${isDanger ? 'danger' : 'confirm'}`;
-        
+
         overlay.classList.add('show');
-        
+
         const close = (val) => {
           overlay.classList.remove('show');
           btnConfirm.onclick = null;
           btnCancel.onclick = null;
           resolve(val);
         };
-        
+
         btnConfirm.onclick = () => close(true);
         btnCancel.onclick = () => close(false);
       });
@@ -616,24 +715,24 @@
         const input = document.getElementById('custom-modal-input');
         const btnConfirm = document.getElementById('custom-modal-confirm');
         const btnCancel = document.getElementById('custom-modal-cancel');
-        
+
         title.textContent = 'Input Dibutuhkan';
         text.textContent = message;
         input.style.display = 'block';
         input.value = defaultVal;
         btnConfirm.textContent = 'Simpan';
         btnConfirm.className = 'custom-modal-btn confirm';
-        
+
         overlay.classList.add('show');
         input.focus();
-        
+
         const close = (val) => {
           overlay.classList.remove('show');
           btnConfirm.onclick = null;
           btnCancel.onclick = null;
           resolve(val);
         };
-        
+
         btnConfirm.onclick = () => close(input.value.trim() || null);
         btnCancel.onclick = () => close(null);
       });
@@ -660,22 +759,22 @@
           return;
         }
       }
-      
+
       if (currentCategory === cat) return;
       currentCategory = cat;
-      
+
       const sel = document.getElementById('category-select');
       if (!Array.from(sel.options).some(o => o.value === cat)) {
-         const opt = document.createElement('option');
-         opt.value = cat;
-         opt.textContent = cat;
-         sel.insertBefore(opt, sel.lastElementChild);
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        sel.insertBefore(opt, sel.lastElementChild);
       }
       sel.value = cat;
 
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'set_category', category: currentCategory }));
-      loadPhotosForCategory(currentCategory);
+        loadPhotosForCategory(currentCategory);
       }
       showToast(`📂 Kategori: ${currentCategory}`);
     }
@@ -720,15 +819,15 @@
         }
         if (msg.type === 'set_category') {
           if (currentCategory === msg.category) return; // Prevent duplicate loop
-          
+
           currentCategory = msg.category;
           const sel = document.getElementById('category-select');
           if (sel) {
             if (!Array.from(sel.options).some(o => o.value === msg.category)) {
-               const opt = document.createElement('option');
-               opt.value = msg.category;
-               opt.textContent = msg.category;
-               sel.insertBefore(opt, sel.lastElementChild);
+              const opt = document.createElement('option');
+              opt.value = msg.category;
+              opt.textContent = msg.category;
+              sel.insertBefore(opt, sel.lastElementChild);
             }
             sel.value = msg.category;
           }
@@ -820,7 +919,7 @@
         if (countData.count !== undefined) {
           document.getElementById('gallery-count').textContent = countData.count + ' foto';
         }
-      } catch(e) { console.error('Failed to load photos:', e); }
+      } catch (e) { console.error('Failed to load photos:', e); }
     }
 
     function renderGallery() {
